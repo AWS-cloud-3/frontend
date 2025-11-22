@@ -88,7 +88,7 @@ export default function SimilarPatents({ patents }) {
             <h5 className="font-bold text-gray-900 mb-2">분석 방법</h5>
             <p className="text-sm text-gray-700 leading-relaxed">
               KIPRIS 검색 결과 중 당신의 아이디어와 특허 초록(abstract)을
-              Embedding하여 코사인 유사도를 계산했습니다. 각 특허마다 AI가
+              Embedding 하여 코사인 유사도를 계산했습니다. 각 특허마다 AI가
               유사한 이유를 3가지로 요약했습니다.
             </p>
           </div>
