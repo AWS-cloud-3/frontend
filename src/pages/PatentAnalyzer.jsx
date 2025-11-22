@@ -10,7 +10,7 @@ export default function PatentAnalyzer() {
   const [currentStep, setCurrentStep] = useState(0);
   const [analysisData, setAnalysisData] = useState(null);
 
-  // 홈으로 리셋 기능
+  // 홈으로 리셋
   const handleReset = () => {
     setAnalyzing(false);
     setCurrentStep(0);
@@ -23,7 +23,6 @@ export default function PatentAnalyzer() {
     setCurrentStep(0);
     setAnalysisData(null);
 
-    // Step animation simulation
     setTimeout(() => setCurrentStep(1), 1500);
     setTimeout(() => setCurrentStep(2), 3000);
     setTimeout(() => setCurrentStep(3), 5000);
@@ -89,7 +88,6 @@ export default function PatentAnalyzer() {
       {/* HEADER */}
       <header className="w-full bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center gap-3">
-          {/* 로고 + 클릭해서 홈으로 */}
           <div
             className="flex items-center gap-3 cursor-pointer"
             onClick={handleReset}
@@ -97,7 +95,6 @@ export default function PatentAnalyzer() {
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
               <i className="ri-search-eye-line text-white text-xl"></i>
             </div>
-
             <div>
               <span className="text-2xl font-bold text-gray-900 hover:opacity-80">
                 PatentLens
@@ -112,6 +109,7 @@ export default function PatentAnalyzer() {
 
       {/* MAIN */}
       <main className="max-w-6xl mx-auto px-6 py-12">
+        {/* HERO */}
         {!analysisData && !analyzing && (
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-medium mb-6">
@@ -119,14 +117,16 @@ export default function PatentAnalyzer() {
             </div>
 
             <h2 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
-              아이디어 한 문장으로 <br />
+              아이디어 한 문장으로
+              <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
                 특허 분석 완료
               </span>
             </h2>
 
             <p className="text-xl text-gray-600 mb-12">
-              AI가 자동으로 키워드를 확장하고 <br />
+              AI가 자동으로 키워드를 확장하고
+              <br />
               유사 특허와 기술 포지션을 분석합니다.
             </p>
           </div>
@@ -134,12 +134,60 @@ export default function PatentAnalyzer() {
 
         <SearchSection onAnalyze={handleAnalyze} analyzing={analyzing} />
 
+        {/* ⭐ Example Prompts Section - UX 강화 */}
+        {!analysisData && !analyzing && (
+          <div className="max-w-3xl mx-auto mt-12 p-6 bg-white rounded-2xl border border-gray-200 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <i className="ri-chat-smile-2-line text-indigo-600 text-xl"></i>
+              이렇게 입력해보세요 👇
+            </h3>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() =>
+                  (document.querySelector("textarea").value =
+                    "스마트폰 카메라로 실시간 객체를 인식하는 AI 기술을 만들고 싶어요")
+                }
+                className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm hover:bg-indigo-100 cursor-pointer"
+              >
+                📱 스마트폰 실시간 객체 인식
+              </button>
+
+              <button
+                onClick={() =>
+                  (document.querySelector("textarea").value =
+                    "공장 CCTV에서 위험 행동을 자동으로 감지하는 AI 기술을 만들고 싶어요")
+                }
+                className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm hover:bg-blue-100 cursor-pointer"
+              >
+                🏭 산업안전 CCTV 분석
+              </button>
+
+              <button
+                onClick={() =>
+                  (document.querySelector("textarea").value =
+                    "사진 속 상품을 자동으로 분류하는 AI 모델을 개발하고 싶어요")
+                }
+                className="px-4 py-2 bg-teal-50 text-teal-700 rounded-lg text-sm hover:bg-teal-100 cursor-pointer"
+              >
+                🛍 이미지 기반 상품 분류
+              </button>
+            </div>
+
+            <p className="mt-4 text-sm text-gray-500">
+              예시를 눌러 바로 입력하거나, 원하는 기술 아이디어를 자유롭게
+              작성하세요.
+            </p>
+          </div>
+        )}
+
+        {/* Progress Section */}
         {analyzing && (
           <div className="mt-12 space-y-6">
             <div className="bg-white rounded-2xl border border-gray-200 p-8">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-bold text-gray-900">
-                  AI 분석 진행 중...
+                  AI 분석 중...
                 </h3>
                 <p className="text-sm text-gray-500">{currentStep}/4</p>
               </div>
@@ -178,6 +226,7 @@ export default function PatentAnalyzer() {
           </div>
         )}
 
+        {/* Result */}
         {analysisData && !analyzing && (
           <div className="mt-12 space-y-8">
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-8">
