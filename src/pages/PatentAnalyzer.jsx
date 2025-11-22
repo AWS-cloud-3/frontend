@@ -10,7 +10,7 @@ export default function PatentAnalyzer() {
   const [currentStep, setCurrentStep] = useState(0);
   const [analysisData, setAnalysisData] = useState(null);
 
-  // 홈으로 리셋
+  // 홈으로 돌아가기
   const handleReset = () => {
     setAnalyzing(false);
     setCurrentStep(0);
@@ -18,15 +18,53 @@ export default function PatentAnalyzer() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Step별 색상 설정 함수
+  const getStepStyles = (step) => {
+    const colorMap = {
+      1: {
+        rowActive: "bg-blue-50 border-blue-200",
+        icon: "bg-blue-600",
+      },
+      2: {
+        rowActive: "bg-indigo-50 border-indigo-200",
+        icon: "bg-indigo-600",
+      },
+      3: {
+        rowActive: "bg-purple-50 border-purple-200",
+        icon: "bg-purple-600",
+      },
+      4: {
+        rowActive: "bg-pink-50 border-pink-200",
+        icon: "bg-pink-600",
+      },
+    };
+
+    const base = colorMap[step];
+
+    if (currentStep < step) {
+      return {
+        row: "bg-gray-50 border border-gray-200",
+        iconBg: "bg-gray-300",
+      };
+    }
+
+    return {
+      row: `border ${base.rowActive}`,
+      iconBg: base.icon,
+    };
+  };
+
   const handleAnalyze = async (idea) => {
     setAnalyzing(true);
     setCurrentStep(0);
     setAnalysisData(null);
 
+    // Step 진행 애니메이션
     setTimeout(() => setCurrentStep(1), 1500);
     setTimeout(() => setCurrentStep(2), 3000);
     setTimeout(() => setCurrentStep(3), 5000);
 
+    // Mock AI 결과
     setTimeout(() => {
       const mockData = {
         userIdea: idea,
@@ -125,8 +163,7 @@ export default function PatentAnalyzer() {
             </h2>
 
             <p className="text-xl text-gray-600 mb-12">
-              AI가 자동으로 키워드를 확장하고
-              <br />
+              AI가 자동으로 키워드를 확장하고 <br />
               유사 특허와 기술 포지션을 분석합니다.
             </p>
           </div>
@@ -134,7 +171,7 @@ export default function PatentAnalyzer() {
 
         <SearchSection onAnalyze={handleAnalyze} analyzing={analyzing} />
 
-        {/* ⭐ Example Prompts Section - UX 강화 */}
+        {/* 예시 프롬프트 */}
         {!analysisData && !analyzing && (
           <div className="max-w-3xl mx-auto mt-12 p-6 bg-white rounded-2xl border border-gray-200 shadow-sm">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -175,13 +212,13 @@ export default function PatentAnalyzer() {
             </div>
 
             <p className="mt-4 text-sm text-gray-500">
-              예시를 눌러 바로 입력하거나, 원하는 기술 아이디어를 자유롭게
+              예시를 눌러 바로 입력하거나 원하는 기술 아이디어를 자유롭게
               작성하세요.
             </p>
           </div>
         )}
 
-        {/* Progress Section */}
+        {/* PROGRESS */}
         {analyzing && (
           <div className="mt-12 space-y-6">
             <div className="bg-white rounded-2xl border border-gray-200 p-8">
@@ -192,41 +229,43 @@ export default function PatentAnalyzer() {
                 <p className="text-sm text-gray-500">{currentStep}/4</p>
               </div>
 
-              {[1, 2, 3, 4].map((step) => (
-                <div
-                  key={step}
-                  className={`p-4 rounded-xl flex items-center gap-4 ${
-                    currentStep >= step
-                      ? "bg-blue-50 border border-blue-200"
-                      : "bg-gray-50 border border-gray-200"
-                  }`}
-                >
-                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-                    {currentStep > step ? (
-                      <i className="ri-check-line text-xl"></i>
-                    ) : currentStep === step ? (
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      step
-                    )}
-                  </div>
+              {[1, 2, 3, 4].map((step) => {
+                const style = getStepStyles(step);
 
-                  <p className="font-medium text-gray-700">
-                    {step === 1
-                      ? "키워드 확장"
-                      : step === 2
-                      ? "유사 특허 검색"
-                      : step === 3
-                      ? "포지션 분석"
-                      : "최종 리포트 생성"}
-                  </p>
-                </div>
-              ))}
+                const label =
+                  step === 1
+                    ? "키워드 확장"
+                    : step === 2
+                    ? "유사 특허 검색"
+                    : step === 3
+                    ? "포지션 분석"
+                    : "최종 리포트 생성";
+
+                return (
+                  <div
+                    key={step}
+                    className={`p-4 rounded-xl flex items-center gap-4 ${style.row}`}
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold ${style.iconBg}`}
+                    >
+                      {currentStep > step ? (
+                        <i className="ri-check-line text-xl"></i>
+                      ) : currentStep === step ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        step
+                      )}
+                    </div>
+                    <p className="font-medium text-gray-700">{label}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Result */}
+        {/* RESULT */}
         {analysisData && !analyzing && (
           <div className="mt-12 space-y-8">
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-8">
