@@ -52,7 +52,7 @@ export default function SimilarPatents({ patents }) {
               </div>
               <div className="flex flex-col items-end gap-2 ml-4">
                 <div className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-bold text-lg whitespace-nowrap">
-                  {(patent.similarity * 100).toFixed(0)}%
+                  {patent.similarity.toFixed(0)}%
                 </div>
                 <span className="text-xs text-gray-600">유사도</span>
               </div>

@@ -1,45 +1,50 @@
-import { useState } from "react";
+// src/pages/PatentAnalyzer.jsx
+
+import { useState, useRef, useEffect } from "react";
 import SearchSection from "../components/SearchSection";
 import KeywordExpansion from "../components/KeywordExpansion";
 import SimilarPatents from "../components/SimilarPatents";
 import PositionAnalysis from "../components/PositionAnalysis";
 import TechIdentity from "../components/TechIdentity";
+import AnalysisProcess from "../components/AnalysisProcess";
+import { analyzeIdea } from "../api/analyze";
 
 export default function PatentAnalyzer() {
   const [analyzing, setAnalyzing] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [analysisData, setAnalysisData] = useState(null);
 
-  // 홈으로 돌아가기
+  // 타이머 정리를 위한 ref
+  const timersRef = useRef([]);
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach((timer) => clearTimeout(timer));
+      timersRef.current = [];
+    };
+  }, []);
+
   const handleReset = () => {
+    // 진행 중인 타이머 모두 정리
+    timersRef.current.forEach((timer) => clearTimeout(timer));
+    timersRef.current = [];
+
     setAnalyzing(false);
     setCurrentStep(0);
     setAnalysisData(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Step별 색상 설정 함수
   const getStepStyles = (step) => {
-    const colorMap = {
-      1: {
-        rowActive: "bg-blue-50 border-blue-200",
-        icon: "bg-blue-600",
-      },
-      2: {
-        rowActive: "bg-indigo-50 border-indigo-200",
-        icon: "bg-indigo-600",
-      },
-      3: {
-        rowActive: "bg-purple-50 border-purple-200",
-        icon: "bg-purple-600",
-      },
-      4: {
-        rowActive: "bg-pink-50 border-pink-200",
-        icon: "bg-pink-600",
-      },
+    const map = {
+      1: { rowActive: "bg-blue-50 border-blue-200", icon: "bg-blue-600" },
+      2: { rowActive: "bg-indigo-50 border-indigo-200", icon: "bg-indigo-600" },
+      3: { rowActive: "bg-purple-50 border-purple-200", icon: "bg-purple-600" },
+      4: { rowActive: "bg-pink-50 border-pink-200", icon: "bg-pink-600" },
     };
 
-    const base = colorMap[step];
+    const base = map[step];
 
     if (currentStep < step) {
       return {
@@ -47,7 +52,6 @@ export default function PatentAnalyzer() {
         iconBg: "bg-gray-300",
       };
     }
-
     return {
       row: `border ${base.rowActive}`,
       iconBg: base.icon,
@@ -59,66 +63,58 @@ export default function PatentAnalyzer() {
     setCurrentStep(0);
     setAnalysisData(null);
 
-    // Step 진행 애니메이션
-    setTimeout(() => setCurrentStep(1), 1500);
-    setTimeout(() => setCurrentStep(2), 3000);
-    setTimeout(() => setCurrentStep(3), 5000);
+    // 기존 타이머 정리
+    timersRef.current.forEach((timer) => clearTimeout(timer));
+    timersRef.current = [];
 
-    // Mock AI 결과
-    setTimeout(() => {
-      const mockData = {
-        userIdea: idea,
-        keywords: [
-          "객체 인식 (Object Detection)",
-          "온디바이스 AI",
-          "실시간 카메라 분석",
-          "이미지 인식 모델",
-          "모바일 프로세싱 최적화",
-          "딥러닝 추론",
-          "엣지 컴퓨팅",
-        ],
-        similarPatents: [
-          {
-            id: "KR-2023-0123456",
-            title: "모바일 객체 인식 장치 및 방법",
-            similarity: 0.87,
-            applicant: "삼성전자주식회사",
-            applicationDate: "2023-11-20",
-            publicationNumber: "KR-2023-0123456",
-            whySimilar: [
-              "모바일 카메라로 실시간 분석 기능 제공",
-              "딥러닝 기반 객체 분류 모델 적용",
-              "모바일 AP에서 저전력 추론",
-            ],
-          },
-          {
-            id: "KR-2023-0098765",
-            title: "이미지 분류 딥러닝 가속 처리기",
-            similarity: 0.82,
-            applicant: "LG전자",
-            applicationDate: "2023-09-10",
-            publicationNumber: "KR-2023-0098765",
-            whySimilar: [
-              "CNN 기반 이미지 분류",
-              "모바일 최적화 모델 적용",
-              "GPU 가속 기반 실시간 처리",
-            ],
-          },
-        ],
-        positionAnalysis: {
-          similarityScore: 81,
-          riskLevel: "high",
-          recommendation:
-            "유사 특허와 해결 방식이 대부분 일치합니다. 차별화된 기술 요소를 추가하는 것이 좋습니다.",
-        },
-        techIdentity:
-          '해당 아이디어는 "온디바이스 실시간 객체 인식" 기술 범주에 속합니다.',
-      };
+    // 각 단계별 타이밍 (총 20초 고려)
+    const STEP_TIMINGS = {
+      step1: 3000, // 3초 후 키워드 확장
+      step2: 8000, // 8초 후 유사 특허 검색
+      step3: 8000, // 8초 후 포지션 분석
+    };
 
-      setAnalysisData(mockData);
-      setCurrentStep(4);
+    // 단계별 애니메이션
+    const timer1 = setTimeout(() => setCurrentStep(1), STEP_TIMINGS.step1);
+    const timer2 = setTimeout(() => setCurrentStep(2), STEP_TIMINGS.step2);
+    const timer3 = setTimeout(() => setCurrentStep(3), STEP_TIMINGS.step3);
+
+    timersRef.current.push(timer1, timer2, timer3);
+
+    try {
+      const startTime = Date.now();
+
+      // 실제 API 호출
+      const apiResult = await analyzeIdea(idea);
+
+      const elapsedTime = Date.now() - startTime;
+      const MIN_DISPLAY_TIME = 18000; // 최소 18초는 보여주기
+
+      // API가 너무 빨리 끝나면 추가 대기
+      const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime);
+
+      const finalTimer = setTimeout(() => {
+        setAnalysisData({
+          ...apiResult,
+          userIdea: idea,
+        });
+        setCurrentStep(4);
+        setAnalyzing(false);
+        timersRef.current = [];
+      }, remainingTime);
+
+      timersRef.current.push(finalTimer);
+    } catch (error) {
+      // 에러 발생 시 타이머 정리
+      timersRef.current.forEach((timer) => clearTimeout(timer));
+      timersRef.current = [];
+
+      console.error(error);
       setAnalyzing(false);
-    }, 6500);
+      setCurrentStep(0);
+      // TODO: 에러 토스트 표시
+      alert("분석 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
   };
 
   return (
@@ -147,104 +143,42 @@ export default function PatentAnalyzer() {
 
       {/* MAIN */}
       <main className="max-w-6xl mx-auto px-6 py-12">
-        {/* HERO */}
+        {/* 초기 HERO 화면 */}
         {!analysisData && !analyzing && (
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-medium mb-6">
-              <i className="ri-sparkle-line"></i> AI 기반 특허 분석
-            </div>
-
+          <div className="text-center mb-10">
             <h2 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
-              아이디어 한 문장으로
-              <br />
+              아이디어 한 문장으로 <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
                 특허 분석 완료
               </span>
             </h2>
-
-            <p className="text-xl text-gray-600 mb-12">
+            <p className="text-xl text-gray-600 mb-8">
               AI가 자동으로 키워드를 확장하고 <br />
               유사 특허와 기술 포지션을 분석합니다.
             </p>
           </div>
         )}
 
+        {/* 4단계 화살표 UI */}
+        {!analysisData && !analyzing && <AnalysisProcess />}
+
         <SearchSection onAnalyze={handleAnalyze} analyzing={analyzing} />
 
-        {/* 예시 프롬프트 */}
-        {!analysisData && !analyzing && (
-          <div className="max-w-3xl mx-auto mt-12 p-6 bg-white rounded-2xl border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <i className="ri-chat-smile-2-line text-indigo-600 text-xl"></i>
-              이렇게 입력해보세요 👇
-            </h3>
-
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() =>
-                  (document.querySelector("textarea").value =
-                    "스마트폰 카메라로 실시간 객체를 인식하는 AI 기술을 만들고 싶어요")
-                }
-                className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm hover:bg-indigo-100 cursor-pointer"
-              >
-                📱 스마트폰 실시간 객체 인식
-              </button>
-
-              <button
-                onClick={() =>
-                  (document.querySelector("textarea").value =
-                    "공장 CCTV에서 위험 행동을 자동으로 감지하는 AI 기술을 만들고 싶어요")
-                }
-                className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm hover:bg-blue-100 cursor-pointer"
-              >
-                🏭 산업안전 CCTV 분석
-              </button>
-
-              <button
-                onClick={() =>
-                  (document.querySelector("textarea").value =
-                    "사진 속 상품을 자동으로 분류하는 AI 모델을 개발하고 싶어요")
-                }
-                className="px-4 py-2 bg-teal-50 text-teal-700 rounded-lg text-sm hover:bg-teal-100 cursor-pointer"
-              >
-                🛍 이미지 기반 상품 분류
-              </button>
-            </div>
-
-            <p className="mt-4 text-sm text-gray-500">
-              예시를 눌러 바로 입력하거나 원하는 기술 아이디어를 자유롭게
-              작성하세요.
-            </p>
-          </div>
-        )}
-
-        {/* PROGRESS */}
+        {/* PROGRESS BAR */}
         {analyzing && (
           <div className="mt-12 space-y-6">
             <div className="bg-white rounded-2xl border border-gray-200 p-8">
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-bold text-gray-900">
-                  AI 분석 중...
-                </h3>
-                <p className="text-sm text-gray-500">{currentStep}/4</p>
-              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-8">
+                AI 분석 중...
+              </h3>
 
               {[1, 2, 3, 4].map((step) => {
                 const style = getStepStyles(step);
 
-                const label =
-                  step === 1
-                    ? "키워드 확장"
-                    : step === 2
-                    ? "유사 특허 검색"
-                    : step === 3
-                    ? "포지션 분석"
-                    : "최종 리포트 생성";
-
                 return (
                   <div
                     key={step}
-                    className={`p-4 rounded-xl flex items-center gap-4 ${style.row}`}
+                    className={`p-4 rounded-xl flex items-center gap-4 mb-4 ${style.row}`}
                   >
                     <div
                       className={`w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold ${style.iconBg}`}
@@ -257,7 +191,15 @@ export default function PatentAnalyzer() {
                         step
                       )}
                     </div>
-                    <p className="font-medium text-gray-700">{label}</p>
+                    <p className="font-medium text-gray-700">
+                      {step === 1
+                        ? "키워드 확장"
+                        : step === 2
+                        ? "유사 특허 검색"
+                        : step === 3
+                        ? "포지션 분석"
+                        : "최종 리포트 생성"}
+                    </p>
                   </div>
                 );
               })}
@@ -268,15 +210,46 @@ export default function PatentAnalyzer() {
         {/* RESULT */}
         {analysisData && !analyzing && (
           <div className="mt-12 space-y-8">
+            {/* 입력 아이디어 */}
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-8">
               <h3 className="text-xl font-bold mb-4">📌 입력 아이디어</h3>
               <p className="text-gray-800 text-lg">{analysisData.userIdea}</p>
             </div>
 
-            <KeywordExpansion keywords={analysisData.keywords} />
-            <SimilarPatents patents={analysisData.similarPatents} />
-            <PositionAnalysis analysis={analysisData.positionAnalysis} />
-            <TechIdentity identity={analysisData.techIdentity} />
+            {/* Step 1 */}
+            <KeywordExpansion keywords={analysisData.steps.step1.keywords} />
+
+            {/* Step 2 */}
+            <SimilarPatents
+              patents={analysisData.steps.step2.items.map((p) => ({
+                title: p.title,
+                applicant: p.applicantName,
+                applicationDate: p.applicationDate,
+                publicationNumber: p.applicationNumber,
+                similarity: p.similarity_percent,
+                whySimilar: p.why,
+              }))}
+            />
+
+            {/* Step 3 */}
+            <PositionAnalysis
+              analysis={{
+                similarityScore:
+                  analysisData.steps.step3.avg_similarity_percent,
+                riskLevel: analysisData.steps.step3.risk_level,
+                recommendation: analysisData.steps.step3.ai_recommendation,
+                diffPoints: analysisData.steps.step3.diff_points,
+                avoidPoints: analysisData.steps.step3.avoid_points,
+              }}
+            />
+
+            {/* Step 4 */}
+            <TechIdentity
+              identity={analysisData.steps.step4.one_liner}
+              fields={analysisData.steps.step4.tech_fields}
+              core={analysisData.steps.step4.core_tech}
+              apps={analysisData.steps.step4.application}
+            />
           </div>
         )}
       </main>
